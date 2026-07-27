@@ -47,8 +47,6 @@ const manifest = {
   ]
 }
 
-const app = express()
-
 const sampleCatalogs = {
   'vod-11': [
     {
@@ -90,4 +88,43 @@ const metas = {
       {
         id: 'kan11:zman-emet:s5e20',
         title: 'עונה 5 פרק 20 - חורגים מהמסגרת',
-        season: 
+        season: 5,
+        episode: 20
+      }
+    ]
+  }
+}
+
+const app = express()
+
+app.get('/', (_, res) => {
+  res.type('text/plain').send('Israel VOD addon is running. Open /manifest.json')
+})
+
+app.get('/manifest.json', (_, res) => {
+  res.json(manifest)
+})
+
+app.get('/catalog/:type/:id.json', (req, res) => {
+  const { id } = req.params
+  res.json({
+    metas: sampleCatalogs[id] || []
+  })
+})
+
+app.get('/meta/:type/:id.json', (req, res) => {
+  const { id } = req.params
+  const meta = metas[id]
+
+  if (!meta) {
+    return res.status(404).json({ error: 'meta not found' })
+  }
+
+  res.json({ meta })
+})
+
+const port = process.env.PORT || 7000
+
+app.listen(port, () => {
+  console.log(`Israel VOD addon listening on http://localhost:${port}`)
+})
