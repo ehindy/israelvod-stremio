@@ -1,7 +1,4 @@
 import express from 'express'
-import sdk from 'stremio-addon-sdk'
-
-const { addonBuilder } = sdk
 
 const manifest = {
   id: 'community.israelvod.stremio',
@@ -50,37 +47,18 @@ const manifest = {
   ]
 }
 
-const builder = new addonBuilder(manifest)
-
-builder.defineCatalogHandler(async ({ id }) => {
-  const sample = {
-    'vod-11': [{ id: 'kan11:test', type: 'series', name: 'בדיקת כאן 11' }],
-    'vod-12': [{ id: 'keshet12:test', type: 'series', name: 'בדיקת קשת 12' }],
-    'vod-13': [{ id: 'reshet13:test', type: 'series', name: 'בדיקת רשת 13' }],
-    'vod-all': [
-      { id: 'kan11:test', type: 'series', name: 'בדיקת כאן 11' },
-      { id: 'keshet12:test', type: 'series', name: 'בדיקת קשת 12' },
-      { id: 'reshet13:test', type: 'series', name: 'בדיקת רשת 13' }
-    ]
-  }
-
-  return { metas: sample[id] || [] }
-})
-
-builder.defineMetaHandler(async ({ id }) => {
-  return {
-    meta: {
-      id,
-      type: 'series',
-      name: `Meta for ${id}`,
-      description: 'Temporary test metadata',
-      videos: []
-    }
-  }
-})
-
-const addonInterface = builder.getInterface()
 const app = express()
+
+const sampleCatalogs = {
+  'vod-11': [{ id: 'kan11:test', type: 'series', name: 'בדיקת כאן 11' }],
+  'vod-12': [{ id: 'keshet12:test', type: 'series', name: 'בדיקת קשת 12' }],
+  'vod-13': [{ id: 'reshet13:test', type: 'series', name: 'בדיקת רשת 13' }],
+  'vod-all': [
+    { id: 'kan11:test', type: 'series', name: 'בדיקת כאן 11' },
+    { id: 'keshet12:test', type: 'series', name: 'בדיקת קשת 12' },
+    { id: 'reshet13:test', type: 'series', name: 'בדיקת רשת 13' }
+  ]
+}
 
 app.get('/', (_, res) => {
   res.type('text/plain').send('Israel VOD addon is running. Open /manifest.json')
@@ -90,22 +68,24 @@ app.get('/manifest.json', (_, res) => {
   res.json(manifest)
 })
 
-app.get('/catalog/:type/:id.json', async (req, res) => {
-  try {
-    const result = await addonInterface.catalog(req.params)
-    res.json(result)
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
+app.get('/catalog/:type/:id.json', (req, res) => {
+  const { id } = req.params
+  res.json({
+    metas: sampleCatalogs[id] || []
+  })
 })
 
-app.get('/meta/:type/:id.json', async (req, res) => {
-  try {
-    const result = await addonInterface.meta(req.params)
-    res.json(result)
-  } catch (error) {
-    res.status(500).json({ error: error.message })
-  }
+app.get('/meta/:type/:id.json', (req, res) => {
+  const { id } = req.params
+  res.json({
+    meta: {
+      id,
+      type: 'series',
+      name: `Meta for ${id}`,
+      description: 'Temporary test metadata',
+      videos: []
+    }
+  })
 })
 
 const port = process.env.PORT || 7000
