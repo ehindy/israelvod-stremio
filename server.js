@@ -50,45 +50,44 @@ const manifest = {
 const app = express()
 
 const sampleCatalogs = {
-  'vod-11': [{ id: 'kan11:test', type: 'series', name: 'בדיקת כאן 11' }],
-  'vod-12': [{ id: 'keshet12:test', type: 'series', name: 'בדיקת קשת 12' }],
-  'vod-13': [{ id: 'reshet13:test', type: 'series', name: 'בדיקת רשת 13' }],
+  'vod-11': [
+    {
+      id: 'kan11:zman-emet',
+      type: 'series',
+      name: 'זמן אמת'
+    }
+  ],
+  'vod-12': [],
+  'vod-13': [],
   'vod-all': [
-    { id: 'kan11:test', type: 'series', name: 'בדיקת כאן 11' },
-    { id: 'keshet12:test', type: 'series', name: 'בדיקת קשת 12' },
-    { id: 'reshet13:test', type: 'series', name: 'בדיקת רשת 13' }
+    {
+      id: 'kan11:zman-emet',
+      type: 'series',
+      name: 'זמן אמת'
+    }
   ]
 }
 
-app.get('/', (_, res) => {
-  res.type('text/plain').send('Israel VOD addon is running. Open /manifest.json')
-})
-
-app.get('/manifest.json', (_, res) => {
-  res.json(manifest)
-})
-
-app.get('/catalog/:type/:id.json', (req, res) => {
-  const { id } = req.params
-  res.json({
-    metas: sampleCatalogs[id] || []
-  })
-})
-
-app.get('/meta/:type/:id.json', (req, res) => {
-  const { id } = req.params
-  res.json({
-    meta: {
-      id,
-      type: 'series',
-      name: `Meta for ${id}`,
-      description: 'Temporary test metadata',
-      videos: []
-    }
-  })
-})
-
-const port = process.env.PORT || 7000
-app.listen(port, () => {
-  console.log(`Israel VOD addon listening on http://localhost:${port}`)
-})
+const metas = {
+  'kan11:zman-emet': {
+    id: 'kan11:zman-emet',
+    type: 'series',
+    name: 'זמן אמת',
+    description: 'תוכנית תחקירים המביאה את הסיפורים העיתונאיים החשובים באמת: תחקירים, כתבות דיוקן וחשיפות שונות של תופעות חברתיות ישראליות, הונאות ושחיתויות, ותופעות עולמיות.',
+    videos: [
+      {
+        id: 'kan11:zman-emet:s5e22',
+        title: 'עונה 5 פרק 22 - העדות החדשה',
+        season: 5,
+        episode: 22
+      },
+      {
+        id: 'kan11:zman-emet:s5e21',
+        title: 'עונה 5 פרק 21 - במילוי תפקידו',
+        season: 5,
+        episode: 21
+      },
+      {
+        id: 'kan11:zman-emet:s5e20',
+        title: 'עונה 5 פרק 20 - חורגים מהמסגרת',
+        season: 
