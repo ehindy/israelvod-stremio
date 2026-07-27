@@ -1,7 +1,7 @@
 import express from 'express'
 import sdk from 'stremio-addon-sdk'
 
-const { addonBuilder, serveHTTP } = sdk
+const { addonBuilder } = sdk
 
 const manifest = {
   id: 'community.israelvod.stremio',
@@ -79,15 +79,36 @@ builder.defineMetaHandler(async ({ id }) => {
   }
 })
 
+const addonInterface = builder.getInterface()
 const app = express()
 
 app.get('/', (_, res) => {
   res.type('text/plain').send('Israel VOD addon is running. Open /manifest.json')
 })
 
-serveHTTP(builder.getInterface(), { app })
+app.get('/manifest.json', (_, res) => {
+  res.json(manifest)
+})
+
+app.get('/catalog/:type/:id.json', async (req, res) => {
+  try {
+    const result = await addonInterface.catalog(req.params)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
+
+app.get('/meta/:type/:id.json', async (req, res) => {
+  try {
+    const result = await addonInterface.meta(req.params)
+    res.json(result)
+  } catch (error) {
+    res.status(500).json({ error: error.message })
+  }
+})
 
 const port = process.env.PORT || 7000
 app.listen(port, () => {
-  console.log(`Israel VOD addon listening on http://localhost:${port}/manifest.json`)
+  console.log(`Israel VOD addon listening on http://localhost:${port}`)
 })
