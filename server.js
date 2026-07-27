@@ -1,8 +1,9 @@
 import express from 'express'
+import * as cheerio from 'cheerio'
 
 const manifest = {
   id: 'community.israelvod.stremio',
-  version: '0.1.0',
+  version: '0.2.0',
   name: 'Israel VOD',
   description: 'Catalog addon for Kan 11, Keshet 12 and Reshet 13',
   resources: ['catalog', 'meta'],
@@ -47,6 +48,8 @@ const manifest = {
   ]
 }
 
+const app = express()
+
 const sampleCatalogs = {
   'vod-11': [
     {
@@ -66,36 +69,131 @@ const sampleCatalogs = {
   ]
 }
 
-const metas = {
+const KAN_SHOWS = {
   'kan11:zman-emet': {
     id: 'kan11:zman-emet',
-    type: 'series',
     name: 'זמן אמת',
     description: 'תוכנית תחקירים המביאה את הסיפורים העיתונאיים החשובים באמת: תחקירים, כתבות דיוקן וחשיפות שונות של תופעות חברתיות ישראליות, הונאות ושחיתויות, ותופעות עולמיות.',
-    videos: [
-      {
-        id: 'kan11:zman-emet:s5e22',
-        title: 'עונה 5 פרק 22 - העדות החדשה',
-        season: 5,
-        episode: 22
-      },
-      {
-        id: 'kan11:zman-emet:s5e21',
-        title: 'עונה 5 פרק 21 - במילוי תפקידו',
-        season: 5,
-        episode: 21
-      },
-      {
-        id: 'kan11:zman-emet:s5e20',
-        title: 'עונה 5 פרק 20 - חורגים מהמסגרת',
-        season: 5,
-        episode: 20
-      }
+    mainUrl: 'https://www.kan.org.il/content/kan/kan-11/p-12043/',
+    seasonUrls: [
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s10/',
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s7/',
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s6/',
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s5/',
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s4/',
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s3/',
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s2/',
+      'https://www.kan.org.il/content/kan/kan-11/p-12043/s1/'
     ]
   }
 }
 
-const app = express()
+function normalizeText(text) {
+  return text.replace(/\s+/g, ' ').replace(/\u00a0/g, ' ').trim()
+}
+
+function parseSeasonNumberFromUrl(url) {
+  const match = url.match(/\/s(\d+)\//)
+  return match ? Number(match[1]) : undefined
+}
+
+function parseEpisodesFromHtml(html, fallbackSeason) {
+  const $ = cheerio.load(html)
+  const text = normalizeText($.root().text())
+
+  const episodes = []
+  const regex = /פרק\s+(\d+)\s*-\s*([^0-9]+?)(?=(?:\d{2}:\d{2}:\d{2}\s*פרק\s+\d+)|$)/g
+
+  let match
+  while ((match = regex.exec(text)) !== null) {
+    const episodeNumber = Number(match[1])
+    const rawTitle = normalizeText(match[2])
+    const title = `עונה ${fallbackSeason} פרק ${episodeNumber} - ${rawTitle}`
+
+    episodes.push({
+      id: `kan11:zman-emet:s${fallbackSeason}e${episodeNumber}`,
+      title,
+      season: fallbackSeason,
+      episode: episodeNumber
+    })
+  }
+
+  const deduped = []
+  const seen = new Set()
+
+  for (const ep of episodes) {
+    if (!seen.has(ep.id)) {
+      seen.add(ep.id)
+      deduped.push(ep)
+    }
+  }
+
+  deduped.sort((a, b) => {
+    if (a.season !== b.season) return b.season - a.season
+    return b.episode - a.episode
+  })
+
+  return deduped
+}
+
+async function fetchHtml(url) {
+  const response = await fetch(url, {
+    headers: {
+      'user-agent': 'Mozilla/5.0 (compatible; IsraelVOD/0.2)'
+    }
+  })
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${url}: ${response.status}`)
+  }
+
+  return await response.text()
+}
+
+async function buildDynamicKanMeta(showId) {
+  const show = KAN_SHOWS[showId]
+
+  if (!show) {
+    return null
+  }
+
+  const allEpisodes = []
+
+  for (const seasonUrl of show.seasonUrls) {
+    try {
+      const html = await fetchHtml(seasonUrl)
+      const seasonNumber = parseSeasonNumberFromUrl(seasonUrl)
+      const episodes = parseEpisodesFromHtml(html, seasonNumber)
+
+      allEpisodes.push(...episodes)
+    } catch (error) {
+      console.error(`Failed season scrape for ${seasonUrl}: ${error.message}`)
+    }
+  }
+
+  const unique = []
+  const seen = new Set()
+
+  for (const ep of allEpisodes) {
+    if (!seen.has(ep.id)) {
+      seen.add(ep.id)
+      unique.push(ep)
+    }
+  }
+
+  unique.sort((a, b) => {
+    if (a.season !== b.season) return b.season - a.season
+    return b.episode - a.episode
+  })
+
+  return {
+    id: show.id,
+    type: 'series',
+    name: show.name,
+    description: show.description,
+    videos: unique
+  }
+}
 
 app.get('/', (_, res) => {
   res.type('text/plain').send('Israel VOD addon is running. Open /manifest.json')
@@ -112,15 +210,24 @@ app.get('/catalog/:type/:id.json', (req, res) => {
   })
 })
 
-app.get('/meta/:type/:id.json', (req, res) => {
-  const { id } = req.params
-  const meta = metas[id]
+app.get('/meta/:type/:id.json', async (req, res) => {
+  try {
+    const { id } = req.params
 
-  if (!meta) {
+    if (id === 'kan11:zman-emet') {
+      const meta = await buildDynamicKanMeta(id)
+
+      if (!meta) {
+        return res.status(404).json({ error: 'meta not found' })
+      }
+
+      return res.json({ meta })
+    }
+
     return res.status(404).json({ error: 'meta not found' })
+  } catch (error) {
+    return res.status(500).json({ error: error.message })
   }
-
-  res.json({ meta })
 })
 
 const port = process.env.PORT || 7000
