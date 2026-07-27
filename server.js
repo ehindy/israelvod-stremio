@@ -1,5 +1,7 @@
 import express from 'express'
-import { addonBuilder, serveHTTP } from 'stremio-addon-sdk'
+import sdk from 'stremio-addon-sdk'
+
+const { addonBuilder, serveHTTP } = sdk
 
 const manifest = {
   id: 'community.israelvod.stremio',
