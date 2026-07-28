@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "name": "Israel VOD",
   "description": "Israeli public VOD catalog for Stremio",
-  "resources": ["catalog"],
+  "resources": ["catalog", "meta"],
   "types": ["series"],
   "idPrefixes": ["kan:"],
   "catalogs": [
