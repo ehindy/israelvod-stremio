@@ -1,0 +1,15 @@
+{
+  "id": "org.ehindy.israelvod",
+  "version": "1.0.0",
+  "name": "Israel VOD",
+  "description": "Israeli public VOD catalog for Stremio",
+  "resources": ["catalog"],
+  "types": ["series"],
+  "catalogs": [
+    {
+      "type": "series",
+      "id": "kan-latest",
+      "name": "KAN Latest"
+    }
+  ]
+}
