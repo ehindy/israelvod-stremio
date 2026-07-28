@@ -1,0 +1,23 @@
+{
+  "meta": {
+    "id": "kan:1075348",
+    "type": "series",
+    "name": "פגישה עם רוני קובן",
+    "poster": "https://www.kan.org.il/content/kan/kan-11/p-1075348/",
+    "description": "סדרת ראיונות.",
+    "videos": [
+      {
+        "id": "kan:1075348:1",
+        "title": "פרק 1",
+        "season": 1,
+        "episode": 1
+      },
+      {
+        "id": "kan:1075348:2",
+        "title": "פרק 2",
+        "season": 1,
+        "episode": 2
+      }
+    ]
+  }
+}
