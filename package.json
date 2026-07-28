@@ -2,8 +2,8 @@
   "name": "kan-dynamic-catalog",
   "version": "1.0.0",
   "description": "Dynamic catalog scraper for Kan Box",
-  "main": "server.js",
+  "main": "server.cjs",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.cjs"
   }
 }
