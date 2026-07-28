@@ -5,6 +5,7 @@
   "description": "Israeli public VOD catalog for Stremio",
   "resources": ["catalog"],
   "types": ["series"],
+  "idPrefixes": ["kan:"],
   "catalogs": [
     {
       "type": "series",
